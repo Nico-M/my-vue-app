@@ -27,7 +27,7 @@
     <div>
         <LyricBox  v-if="!!currentSong?.lyricId" :lyrics="currentSongLyric"></LyricBox>
     </div>
-    <Player v-show="!!currentSong" ref="playerEle" />
+    <Player v-show="!!currentSong" ref="playerEle" @timeupdate="handleTimeupdate" />
 </template>
 
 <script lang="ts" setup>
@@ -57,5 +57,9 @@ const learningSongs = (song: Album)=>{
   const player = playerEle.value;
   player?.switch(song.name);
 
+}
+
+const handleTimeupdate = (timeDuration: number)=>{
+  console.log(timeDuration);
 }
 </script>
