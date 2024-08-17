@@ -1,18 +1,76 @@
 <template>
   <div class="text-center">
-    <ScrollArea class="h-[200px] inline-block border rounded-sm p-8">
-      <div v-html="lyrics" class="lyric-box inline-block"></div>
+    <ScrollArea class="h-[200px] inline-block border rounded-sm p-8" ref="scrollRef">
+      <div v-html="props.lyrics" class="lyric-box inline-block" ref="musicNodesRef"></div>
     </ScrollArea>
   </div>
 </template>
 
 <script setup lang="ts">
 import {ScrollArea} from '@/components/ui/scroll-area'
+import {reactive, ref, watch} from "vue";
 
-defineProps<{
-  lyrics: string
+interface MusicSecNode {
+  distance: number,
+  timeNode: number
+}
+
+const props = defineProps<{
+  lyrics: string,
+  top: number|null
 }>()
 
+const scrollRef = ref<InstanceType<typeof ScrollArea> | null>(null)
+const musicNodesRef = ref<HTMLDivElement|null>(null)
+
+const musicNodes  = reactive<MusicSecNode[]>([])
+
+defineExpose({
+  musicNodes
+})
+
+watch(() => props.top, (newTop) => {
+  if (scrollRef.value) {
+    if(newTop && newTop >= 0){
+      //set scroll smooth
+      console.log('fresh',newTop)
+      const scrollEleRef = scrollRef.value.viewport?.();
+      const scrollEle = scrollEleRef.value;
+      if(scrollEle){
+        scrollEle.style.scrollBehavior = 'smooth';
+        scrollEle.scrollTop = newTop
+      }
+    }
+}
+})
+
+watch(()=>musicNodesRef.value,(scrollElement)=>{
+  if(scrollElement){
+    const scrollPositionTop = scrollElement.getBoundingClientRect().top;
+    const allNodes = scrollElement.querySelectorAll('.LyricsYomi');
+    const nodesData: MusicSecNode[] = [];
+    allNodes.forEach(node => {
+      const nodeSt = node.getAttribute('st');
+      if(nodeSt){
+        const durations = nodeSt.split('.')[0];
+        const [,min,sec]=durations.split(':');
+        const totalSeconds = parseInt(min) * 60 + parseInt(sec);
+        const topDistance = node.getBoundingClientRect();
+        const distance = topDistance.top - scrollPositionTop - 12;
+        nodesData.push({
+          distance,
+          timeNode: totalSeconds
+        });
+      }
+
+    })
+
+    if(nodesData.length > 0){
+      musicNodes.length=0
+      musicNodes.push(...nodesData);
+    }
+  }
+})
 
 </script>
 
